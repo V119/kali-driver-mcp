@@ -6,6 +6,13 @@ __pycache__/
 # C extensions
 *.so
 
+# Configuration files with credentials
+config.yaml
+*.key
+*.pem
+logs/
+.idea/
+
 # Distribution / packaging
 .Python
 build/

@@ -1,0 +1,49 @@
+# Test configuration - copy to test_config.yaml for integration tests
+# This is a template - fill in with your actual VM details
+
+vm:
+  host: "192.168.2.104"           # Kali VM IP address
+  port: 22                         # SSH port
+  username: "kali"                 # SSH username (can be regular user if use_sudo is true)
+  auth_method: "password"          # "key" or "password"
+  key_file: ""                     # Path to SSH private key (if auth_method is "key")
+  password: "kali"                 # SSH password (if auth_method is "password")
+
+  # Sudo configuration (only needed if username is not "root")
+  use_sudo: true                   # Enable sudo for root privileges
+  sudo_method: "su"                # "su" (sudo su root) or "command" (sudo per command)
+  sudo_password: kali              # Sudo password (null if NOPASSWD is configured)
+
+shared_folder:
+  host_path: "/Users/haoyang/src/AIC8800-Linux-Driver"  # Path on host machine
+  vm_path: "/home/kali/Desktop/share/AIC8800-Linux-Driver"                # Mount point in VM
+  verify_mount: true                                # Verify mount on startup
+
+build:
+  make_jobs: 4                     # Parallel make jobs (-j flag)
+  clean_before_build: false        # Run 'make clean' before each build
+
+network:
+  wireless_interface: "wlan0"      # Physical wireless interface
+  monitor_interface: "wlan0mon"    # Monitor mode interface name
+  default_channel: 6               # Default channel for monitoring
+  kill_processes: true             # Kill interfering processes when starting monitor mode
+
+capture:
+  output_dir: "/tmp/captures"      # Directory for capture files (in VM)
+  default_duration: 60             # Default capture duration (seconds)
+  output_format: "pcap,csv"        # Output formats: "pcap", "csv", or "pcap,csv"
+  update_interval: 1               # Screen update interval (seconds)
+  band: "bg"                       # Wireless band: "a" (5GHz), "bg" (2.4GHz), "abg" (both)
+
+logging:
+  max_lines: 1000                  # Maximum log lines to retrieve from VM
+  default_source: "dmesg"          # Default log source: "dmesg", "syslog", "kern", "journal"
+
+  # Logging system configuration
+  level: "INFO"                    # Log level: DEBUG, INFO, WARNING, ERROR
+  file: "logs/kali-driver-mcp.log" # Log file path (null to disable file logging)
+  json_format: false               # Use JSON format for structured logging
+  enable_console: true             # Enable console (stderr) logging
+  log_commands: true               # Log all SSH commands with input/output
+  log_tools: true                  # Log all MCP tool invocations

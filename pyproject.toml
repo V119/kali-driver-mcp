@@ -1,0 +1,24 @@
+[project]
+name = "kali-driver-mcp"
+version = "0.1.0"
+description = "MCP server for debugging network drivers in Kali Linux VM"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "mcp>=1.0.0",
+    "asyncssh>=2.14.0",
+    "pyyaml>=6.0.1",
+    "pytest>=9.0.2",
+]
+
+[project.scripts]
+kali-driver-mcp = "kali_driver_mcp.server:main"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.uv]
+dev-dependencies = [
+    "pytest-asyncio==1.3.0"
+]
