@@ -38,9 +38,9 @@ async def manage_driver(
         # Build insmod command
         module_path = f"{vm_path}/{module_name}.ko"
 
-        # Check if module file exists
+        # Check if module file exists (use root to access shared folder)
         check_cmd = f"test -f {module_path} && echo YES || echo NO"
-        check_result = await ssh.execute(check_cmd)
+        check_result = await ssh.execute(check_cmd, needs_root=True)
         if check_result.stdout != "YES":
             result["error"] = f"Module file not found: {module_path}"
             return result

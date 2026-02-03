@@ -133,6 +133,10 @@ class KaliDriverMCPServer:
                                 "type": "boolean",
                                 "description": "Verbose build output",
                                 "default": False
+                            },
+                            "directory": {
+                                "type": "string",
+                                "description": "Subdirectory to compile in (relative to vm_path)"
                             }
                         }
                     }
@@ -330,7 +334,8 @@ class KaliDriverMCPServer:
                         self.ssh_manager,
                         target=arguments.get("target"),
                         clean=arguments.get("clean", False),
-                        verbose=arguments.get("verbose", False)
+                        verbose=arguments.get("verbose", False),
+                        directory=arguments.get("directory")
                     )
 
                 elif name == "driver_load":

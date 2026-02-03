@@ -44,7 +44,7 @@ async def file_operations(
         if filter_pattern:
             cmd = f"find {path} -name '{filter_pattern}'"
 
-        exec_result = await ssh.execute(cmd)
+        exec_result = await ssh.execute(cmd, needs_root=True)
         if exec_result.success:
             result["output"] = exec_result.stdout
             # Parse file entries
@@ -54,7 +54,7 @@ async def file_operations(
 
     elif operation == "read":
         cmd = f"cat {path}"
-        exec_result = await ssh.execute(cmd)
+        exec_result = await ssh.execute(cmd, needs_root=True)
         if exec_result.success:
             result["content"] = exec_result.stdout
         else:
@@ -62,7 +62,7 @@ async def file_operations(
 
     elif operation == "stat":
         cmd = f"stat {path}"
-        exec_result = await ssh.execute(cmd)
+        exec_result = await ssh.execute(cmd, needs_root=True)
         if exec_result.success:
             result["stat_info"] = exec_result.stdout
         else:
@@ -73,7 +73,7 @@ async def file_operations(
             result["error"] = "search_pattern is required for search operation"
         else:
             cmd = f"grep -r '{search_pattern}' {path}"
-            exec_result = await ssh.execute(cmd)
+            exec_result = await ssh.execute(cmd, needs_root=True)
             # grep returns 1 if no matches, which is not an error
             if exec_result.exit_code in [0, 1]:
                 result["matches"] = exec_result.stdout.split("\n") if exec_result.stdout else []

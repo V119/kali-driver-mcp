@@ -11,7 +11,8 @@ async def compile_driver(
     ssh: SSHManager,
     target: Optional[str] = None,
     clean: bool = False,
-    verbose: bool = False
+    verbose: bool = False,
+    directory: Optional[str] = None
 ) -> Dict[str, Any]:
     """
     Compile kernel modules using make.
@@ -22,11 +23,17 @@ async def compile_driver(
         target: Optional specific make target (default: all)
         clean: Force clean build
         verbose: Verbose output
+        directory: Subdirectory to compile in (relative to vm_path)
 
     Returns:
         Dictionary with compilation results
     """
     vm_path = config.shared_folder.vm_path
+
+    # Use subdirectory if specified
+    if directory:
+        vm_path = f"{vm_path}/{directory}"
+
     make_jobs = config.build.make_jobs
     should_clean = clean or config.build.clean_before_build
 
@@ -38,16 +45,16 @@ async def compile_driver(
         "artifacts": []
     }
 
-    # Check if Makefile exists
-    makefile_check = await ssh.execute(f"test -f {vm_path}/Makefile && echo YES || echo NO")
+    # Check if Makefile exists (use root to access shared folder)
+    makefile_check = await ssh.execute(f"test -f {vm_path}/Makefile && echo YES || echo NO", needs_root=True)
     if makefile_check.stdout != "YES":
         result["error"] = f"Makefile not found in {vm_path}"
         return result
 
-    # Clean if requested
+    # Clean if requested (use root for make operations)
     if should_clean:
         clean_cmd = f"cd {vm_path} && make clean"
-        clean_result = await ssh.execute(clean_cmd, timeout=60)
+        clean_result = await ssh.execute(clean_cmd, timeout=60, needs_root=True)
         result["cleaned"] = clean_result.success
         if not clean_result.success:
             result["clean_error"] = clean_result.stderr
@@ -59,9 +66,9 @@ async def compile_driver(
     if target:
         make_cmd += f" {target}"
 
-    # Execute build with longer timeout (5 minutes)
+    # Execute build with longer timeout (5 minutes) using root
     start_time = time.time()
-    build_result = await ssh.execute(make_cmd, timeout=300)
+    build_result = await ssh.execute(make_cmd, timeout=300, needs_root=True)
     duration = time.time() - start_time
 
     result["duration"] = round(duration, 2)
@@ -71,9 +78,9 @@ async def compile_driver(
     if build_result.success:
         result["output"] = build_result.stdout
 
-        # Find compiled .ko files
+        # Find compiled .ko files (use root to access)
         find_cmd = f"find {vm_path} -name '*.ko' -type f"
-        find_result = await ssh.execute(find_cmd)
+        find_result = await ssh.execute(find_cmd, needs_root=True)
         if find_result.success and find_result.stdout:
             result["artifacts"] = find_result.stdout.split("\n")
     else:

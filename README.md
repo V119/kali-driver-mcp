@@ -37,6 +37,38 @@ MCP (Model Context Protocol) server for debugging network card (NIC) drivers in 
 - Driver compilation and loading happen in isolated VM
 - Remote control via SSH provides flexibility
 
+## 🚀 Quick Start
+
+**想在其他项目中使用这个 MCP 服务？**
+
+查看详细的客户端连接和使用指南：
+
+- **[📖 MCP 客户端使用指南](MCP_CLIENT_GUIDE.md)** - 三种连接方式详解：
+  - ✅ Claude Desktop 集成（最简单）
+  - ✅ Python 客户端（自动化脚本）
+  - ✅ 其他 MCP 工具集成
+
+- **[💻 Python 客户端示例](mcp_client_example.py)** - 可直接运行的完整示例代码
+
+**快速连接（Claude Desktop）**：
+
+1. 安装并配置本服务（见下方 [Installation](#installation)）
+2. 编辑 Claude Desktop 配置：
+   ```json
+   {
+     "mcpServers": {
+       "kali-driver": {
+         "command": "uv",
+         "args": ["run", "python", "-m", "kali_driver_mcp.server"],
+         "cwd": "/path/to/kali-driver-mcp"
+       }
+     }
+   }
+   ```
+3. 重启 Claude Desktop，即可使用！
+
+详细步骤请参考 [MCP_CLIENT_GUIDE.md](MCP_CLIENT_GUIDE.md)。
+
 ## Features
 
 This MCP server provides 9 tools for network driver development and debugging:

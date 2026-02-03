@@ -29,7 +29,7 @@ async def verify_shared_folder(
     }
 
     # Check if mount point exists
-    exists_check = await ssh.execute(f"test -d {vm_path} && echo EXISTS || echo NOT_FOUND")
+    exists_check = await ssh.execute(f"test -d {vm_path} && echo EXISTS || echo NOT_FOUND", needs_root=True)
     if exists_check.stdout == "NOT_FOUND":
         result["error"] = f"Directory not found: {vm_path}"
         return result
@@ -48,21 +48,21 @@ async def verify_shared_folder(
                     result["mount_type"] = parts[4].strip("()")
                 break
 
-    # Check if writable
-    writable_check = await ssh.execute(f"test -w {vm_path} && echo WRITABLE || echo READ_ONLY")
+    # Check if writable (use root to test)
+    writable_check = await ssh.execute(f"test -w {vm_path} && echo WRITABLE || echo READ_ONLY", needs_root=True)
     if writable_check.stdout == "WRITABLE":
         result["writable"] = True
 
-    # Count files
-    files_count = await ssh.execute(f"ls -1 {vm_path} 2>/dev/null | wc -l")
+    # Count files (use root to access)
+    files_count = await ssh.execute(f"ls -1 {vm_path} 2>/dev/null | wc -l", needs_root=True)
     if files_count.success:
         try:
             result["files_count"] = int(files_count.stdout.strip())
         except ValueError:
             pass
 
-    # Check for Makefile
-    makefile_check = await ssh.execute(f"test -f {vm_path}/Makefile && echo YES || echo NO")
+    # Check for Makefile (use root to access)
+    makefile_check = await ssh.execute(f"test -f {vm_path}/Makefile && echo YES || echo NO", needs_root=True)
     result["has_makefile"] = (makefile_check.stdout == "YES")
 
     # Overall status
