@@ -143,13 +143,13 @@ class KaliDriverMCPServer:
                 ),
                 Tool(
                     name="driver_load",
-                    description="Load, unload, or get info about kernel modules",
+                    description="Load, unload, install, or get info about kernel modules",
                     inputSchema={
                         "type": "object",
                         "properties": {
                             "operation": {
                                 "type": "string",
-                                "enum": ["load", "unload", "reload", "info", "list"],
+                                "enum": ["load", "unload", "reload", "info", "list", "install"],
                                 "description": "Operation to perform"
                             },
                             "module_name": {
@@ -165,6 +165,15 @@ class KaliDriverMCPServer:
                                 "type": "boolean",
                                 "description": "Force unload",
                                 "default": False
+                            },
+                            "use_modprobe": {
+                                "type": "boolean",
+                                "description": "Use modprobe instead of insmod (default: True)",
+                                "default": True
+                            },
+                            "module_path": {
+                                "type": "string",
+                                "description": "Optional path to .ko file or directory for make install"
                             }
                         },
                         "required": ["operation"]
@@ -345,7 +354,9 @@ class KaliDriverMCPServer:
                         operation=arguments["operation"],
                         module_name=arguments.get("module_name", ""),
                         parameters=arguments.get("parameters"),
-                        force=arguments.get("force", False)
+                        force=arguments.get("force", False),
+                        use_modprobe=arguments.get("use_modprobe", True),
+                        module_path=arguments.get("module_path")
                     )
 
                 elif name == "log_viewer":

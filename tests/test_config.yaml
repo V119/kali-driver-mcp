@@ -2,7 +2,7 @@
 # This is a template - fill in with your actual VM details
 
 vm:
-  host: "192.168.2.104"           # Kali VM IP address
+  host: "192.168.56.2"           # Kali VM IP address
   port: 22                         # SSH port
   username: "kali"                 # SSH username (can be regular user if use_sudo is true)
   auth_method: "password"          # "key" or "password"

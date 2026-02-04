@@ -11,7 +11,9 @@ async def manage_driver(
     operation: str,
     module_name: str,
     parameters: Optional[Dict[str, str]] = None,
-    force: bool = False
+    force: bool = False,
+    use_modprobe: bool = True,
+    module_path: Optional[str] = None
 ) -> Dict[str, Any]:
     """
     Load, unload, or get info about kernel modules.
@@ -19,10 +21,12 @@ async def manage_driver(
     Args:
         config: Configuration object
         ssh: SSH manager
-        operation: "load", "unload", "reload", "info", or "list"
+        operation: "load", "unload", "reload", "info", "list", or "install"
         module_name: Module name (without .ko extension)
         parameters: Module parameters (key=value pairs)
         force: Force unload
+        use_modprobe: Use modprobe instead of insmod (default: True)
+        module_path: Optional path to .ko file (for insmod)
 
     Returns:
         Dictionary with operation results
@@ -34,31 +38,70 @@ async def manage_driver(
         "success": False
     }
 
-    if operation == "load":
-        # Build insmod command
-        module_path = f"{vm_path}/{module_name}.ko"
+    if operation == "install":
+        # Run make install in the driver directory
+        install_dir = module_path or f"{vm_path}/drivers/aic8800"
+        install_cmd = f"cd {install_dir} && make install"
 
-        # Check if module file exists (use root to access shared folder)
-        check_cmd = f"test -f {module_path} && echo YES || echo NO"
-        check_result = await ssh.execute(check_cmd, needs_root=True)
-        if check_result.stdout != "YES":
-            result["error"] = f"Module file not found: {module_path}"
-            return result
-
-        cmd = f"insmod {module_path}"
-
-        # Add parameters if provided
-        if parameters:
-            params_str = " ".join([f"{k}={v}" for k, v in parameters.items()])
-            cmd += f" {params_str}"
-
-        exec_result = await ssh.execute(cmd, needs_root=True)  # Needs root
+        exec_result = await ssh.execute(install_cmd, timeout=120, needs_root=True)
         result["success"] = exec_result.success
 
         if exec_result.success:
-            result["message"] = f"Module {module_name} loaded successfully"
+            result["message"] = "Modules installed successfully"
+            result["output"] = exec_result.stdout
+
+            # Run depmod to update module dependencies
+            depmod_result = await ssh.execute("depmod -a", needs_root=True)
+            if depmod_result.success:
+                result["depmod_run"] = True
         else:
-            result["error"] = exec_result.stderr
+            result["error"] = exec_result.stderr or exec_result.stdout
+
+    elif operation == "load":
+        if use_modprobe:
+            # Use modprobe (for installed modules)
+            cmd = f"modprobe {module_name}"
+
+            # Add parameters if provided
+            if parameters:
+                params_str = " ".join([f"{k}={v}" for k, v in parameters.items()])
+                cmd += f" {params_str}"
+
+            exec_result = await ssh.execute(cmd, needs_root=True)
+            result["success"] = exec_result.success
+
+            if exec_result.success:
+                result["message"] = f"Module {module_name} loaded successfully via modprobe"
+                result["method"] = "modprobe"
+            else:
+                result["error"] = exec_result.stderr
+        else:
+            # Use insmod (for local .ko files)
+            if not module_path:
+                module_path = f"{vm_path}/{module_name}.ko"
+
+            # Check if module file exists
+            check_cmd = f"test -f {module_path} && echo YES || echo NO"
+            check_result = await ssh.execute(check_cmd, needs_root=True)
+            if check_result.stdout != "YES":
+                result["error"] = f"Module file not found: {module_path}"
+                return result
+
+            cmd = f"insmod {module_path}"
+
+            # Add parameters if provided
+            if parameters:
+                params_str = " ".join([f"{k}={v}" for k, v in parameters.items()])
+                cmd += f" {params_str}"
+
+            exec_result = await ssh.execute(cmd, needs_root=True)
+            result["success"] = exec_result.success
+
+            if exec_result.success:
+                result["message"] = f"Module {module_name} loaded successfully via insmod"
+                result["method"] = "insmod"
+            else:
+                result["error"] = exec_result.stderr
 
     elif operation == "unload":
         cmd = f"rmmod {module_name}"
